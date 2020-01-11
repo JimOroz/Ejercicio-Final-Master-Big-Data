@@ -1,67 +1,83 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[7]:
+# In[1]:
 
 
-get_ipython().run_line_magic('pylab', '')
-get_ipython().run_line_magic('matplotlib', 'inline')
+#!/usr/bin/env python
+# coding: utf-8
 
-get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'retina'")
-
-
-# In[10]:
-
-
+import numpy as np
 import pandas as pd
-filename = "crime_data.csv"
+import matplotlib.pyplot as plt
+# import models
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.linear_model import LinearRegression
+
+
+# In[2]:
+
+
+filename = "auto.csv"
+
+# leemos el archivo
 df = pd.read_csv(filename, sep = ',')
 df.head()
 
 
-# In[11]:
+# In[3]:
 
 
-col_names = list(df.columns)
-col_names.remove('State')
-
-df_state = df[col_names]
-df_state.head()
+# Separación de la variable objetivo y las explicativas
+target = 'mpg'
+features = [col for col in df.columns if col != target]
 
 
-# In[12]:
+# In[4]:
 
 
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-from scipy.spatial.distance import cdist
-
-def plot_sillhouette(blobs, figure_name, max_k = 10, n_init = 10):
-    sillhouette_avgs = []
-    
-    for k in range(2, max_k):
-        kmean = KMeans(n_clusters = k, n_init = n_init).fit(blobs)
-        sillhouette_avgs.append(silhouette_score(blobs, kmean.labels_))
-        
-    plot(range(2, max_k), sillhouette_avgs)
-    title(figure_name)
-    
-plot_sillhouette(df_state, 'df')
+# Listado de variables disponibles para hacer un modelo.
+for var in features:
+    print(var , ':' , len(set(df[var])))
 
 
-# In[14]:
+# In[5]:
 
 
-kmeans = KMeans(n_clusters = 2, n_init = 10).fit(df_state)
-kmeans.cluster_centers_
+pd.plotting.scatter_matrix(df, figsize = (12, 12), diagonal = 'kde');
 
 
-# In[15]:
+# In[6]:
 
 
-clust = kmeans.predict(df_state)
+# creamos un modelo y le pasamos todos los datos
+regresor = DecisionTreeRegressor(max_depth=5)
 
-for i in range(max(clust) + 1):
-    print ("Cluster", i)
-    print (df["State"][clust == i])
+regresor.fit(df[features], df[target])
+
+
+# In[7]:
+
+
+preds = regresor.predict(df[features])
+
+
+# In[8]:
+
+
+# creamos una visualizacioón de las predicciones y los datos reales
+plt.figure(figsize=(15,5))
+
+plt.subplot(1,2,1)
+plt.title("Datos reales (rojo) vs predicciones (azul)")
+plt.plot(preds, "b.")
+plt.plot(df[target], "r.")
+plt.legend(["predicciones del modelo", "datos reales"], loc="upper left")
+
+plt.subplot(1,2,2)
+plt.title("Error cometido por punto predicho (menor es mejor)")
+plt.plot(preds-df[target], "r.")
+plt.legend(["Error (y-y_pred)"], loc="upper left")
+
+plt.show()
 
